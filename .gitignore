@@ -1,0 +1,93 @@
+# =====================
+# OS Files
+# =====================
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# =====================
+# Build & Dependency
+# =====================
+# Maven
+target/
+*.class
+*.jar
+*.war
+*.ear
+.m2/
+
+# Gradle (if ever used)
+build/
+
+# =====================
+# IDE / Editor
+# =====================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.classpath
+*.project
+# VS Code
+.vscode/
+
+# =====================
+# Logs / Temp
+# =====================
+*.log
+*.pid
+*.tmp
+tmp/
+
+# Spring Boot devtools
+spring-boot-devtools.log
+
+# =====================
+# Environment / Secrets
+# =====================
+.env
+.env.local
+.env.*.local
+*.keystore
+*.jks
+
+# =====================
+# Docker
+# =====================
+# Ignore Docker volumes, containers, images by default
+docker-compose.override.yml
+docker-compose.local.yml
+*.env
+
+# =====================
+# Node / Frontend (if any)
+# =====================
+node_modules/
+dist/
+
+# =====================
+# Coverage / Reports
+# =====================
+# Jacoco / code coverage
+jacoco.exec
+coverage/
+*.lcov
+
+# =====================
+# Others
+# =====================
+# Temporary files
+*.swp
+*.swo
+*.bak
+*.old
+
+# =====================
+# Modular Monolith Modules
+# =====================
+# Ignore module build outputs
+**/target/

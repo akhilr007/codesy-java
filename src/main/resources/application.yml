@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: codesy-platform
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/codesy}
+    username: ${SPRING_DATASOURCE_USERNAME:codesy}
+    password: ${SPRING_DATASOURCE_PASSWORD:codesy}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+      group-id: ${SPRING_KAFKA_CONSUMER_GROUP_ID:codesy-execution}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      repositories:
+        enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  jwt:
+    secret: ${APP_JWT_SECRET:codesy-local-jwt-secret-key-for-dev-only-1234567890}
+    expiration: ${APP_JWT_EXPIRATION:PT4H}
+  execution:
+    dispatch: ${APP_EXECUTION_DISPATCH:local}
+    topic: ${APP_EXECUTION_TOPIC:submission-queued}
+    outbox-batch-size: ${APP_EXECUTION_OUTBOX_BATCH_SIZE:25}
+    producer-enabled: ${APP_EXECUTION_PRODUCER_ENABLED:true}
+    worker-enabled: ${APP_EXECUTION_WORKER_ENABLED:true}
+    poll-delay: ${APP_EXECUTION_POLL_DELAY:3000}
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-na}]"

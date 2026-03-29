@@ -1,0 +1,9 @@
+spring:
+  main:
+    web-application-type: none
+
+app:
+  execution:
+    dispatch: kafka
+    producer-enabled: false
+    worker-enabled: true
