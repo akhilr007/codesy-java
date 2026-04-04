@@ -19,23 +19,25 @@ import java.util.Map;
 public class JwtService {
 
     private final Key signingKey;
-    private final Duration expiration;
+    private final Duration accessExpiration;
 
     public JwtService(@Value("${app.jwt.secret}") String secret,
-                      @Value("${app.jwt.expiration}") Duration expiration) {
+                      @Value("${app.jwt.expiration}") Duration accessExpiration) {
         this.signingKey = resolveKey(secret);
-        this.expiration = expiration;
+        this.accessExpiration = accessExpiration;
     }
 
-    public String generateToken(String username, String role) {
+    public IssuedAccessToken issueAccessToken(String username, String role) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        Instant expiresAt = now.plus(accessExpiration);
+        String token =  Jwts.builder()
                 .subject(username)
                 .claims(Map.of("role", role))
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(expiration)))
+                .expiration(Date.from(expiresAt))
                 .signWith(signingKey)
                 .compact();
+        return new IssuedAccessToken(token, expiresAt);
     }
 
     public String extractUsername(String token) {
@@ -65,4 +67,6 @@ public class JwtService {
             return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         }
     }
+
+    public record IssuedAccessToken(String token, Instant expiresAt) {}
 }

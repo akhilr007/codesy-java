@@ -50,7 +50,12 @@ springdoc:
 app:
   jwt:
     secret: ${APP_JWT_SECRET:codesy-local-jwt-secret-key-for-dev-only-1234567890}
-    expiration: ${APP_JWT_EXPIRATION:PT4H}
+    access-expiration: ${APP_JWT_ACCESS_EXPIRATION:PT15M}
+    refresh-expiration: ${APP_JWT_REFRESH_EXPIRATION:P7D}
+    refresh-cookie-name: ${APP_JWT_REFRESH_COOKIE_NAME:codesy_refresh_token}
+    refresh-cookie-secure: ${APP_JWT_REFRESH_COOKIE_SECURE:false}
+    refresh-cookie-same-site: ${APP_JWT_REFRESH_COOKIE_SAME_SITE:Strict}
+    refresh-cookie-path: ${APP_JWT_REFRESH_COOKIE_PATH:/api/v1/auth}
   execution:
     dispatch: ${APP_EXECUTION_DISPATCH:local}
     topic: ${APP_EXECUTION_TOPIC:submission-queued}
