@@ -26,7 +26,7 @@ public class Problem extends AuditableEntity {
     @Column(nullable = false, length = 32)
     private ProblemDifficulty difficulty;
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "problem_tags", joinColumns = @JoinColumn(name = "problem_id"))
     @Column(name = "tag", nullable = false, length = 64)
     private Set<String> tags = new LinkedHashSet<>();
