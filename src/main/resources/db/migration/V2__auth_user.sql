@@ -3,10 +3,10 @@ CREATE TABLE IF NOT EXISTS app_users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     version BIGINT NOT NULL DEFAULT 0,
-    username VARCHAR(50) NOT NULL UNIQUE,
+    username VARCHAR(80) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(32) NOT NULL CHECK (role IN ('USER', 'ADMIN'))
+    role VARCHAR(32) NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT TRUE
 );
 
@@ -28,12 +28,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     user_agent VARCHAR(512)
 );
 
-CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id
-    ON refresh_tokens(user_id);
-
-CREATE INDEX idx_refresh_tokens_active
-    ON refresh_tokens(user_id, expires_at)
-    WHERE revoked_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_active
+    ON refresh_tokens(user_id, revoked_at, expires_at);
 
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_family
     ON refresh_tokens(family_id);
