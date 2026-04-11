@@ -19,7 +19,7 @@ import java.util.List;
 @Table(name = "app_users")
 public class AppUser extends AuditableEntity implements UserDetails {
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, unique = true, length = 80)
     private String username;
 
     @Column(nullable = false, unique = true)
