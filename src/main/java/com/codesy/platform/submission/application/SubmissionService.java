@@ -1,6 +1,10 @@
 package com.codesy.platform.submission.application;
 
 import com.codesy.platform.auth.application.AuthenticatedUserProvider;
+import com.codesy.platform.execution.domain.OutboxEvent;
+import com.codesy.platform.execution.domain.OutboxStatus;
+import com.codesy.platform.execution.domain.SubmissionQueuePayload;
+import com.codesy.platform.execution.infrastructure.OutboxEventRepository;
 import com.codesy.platform.problem.domain.Problem;
 import com.codesy.platform.problem.domain.ProblemVersion;
 import com.codesy.platform.problem.domain.TestCaseVisibility;
@@ -17,6 +21,7 @@ import com.codesy.platform.submission.infrastructure.SubmissionRepository;
 import com.codesy.platform.submission.infrastructure.SubmissionResultRepository;
 import com.codesy.platform.submission.infrastructure.SubmissionTestResultRepository;
 import com.codesy.platform.user.domain.AppUser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +47,7 @@ public class SubmissionService {
     private final ProblemVersionRepository problemVersionRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final ObjectMapper objectMapper;
+    private final OutboxEventRepository outboxEventRepository;
 
     @Transactional
     public SubmissionResponse createSubmission(CreateSubmissionRequest request) {
@@ -66,6 +72,7 @@ public class SubmissionService {
         Submission saved = submissionRepository.save(submission);
 
         // todo : add to outbox event
+        outboxEventRepository.save(buildOutbox(saved));
         return toCreatedResponse(saved);
     }
 
@@ -103,6 +110,16 @@ public class SubmissionService {
                 : submissionTestResultRepository.findAllBySubmissionResultIdOrderByTestCaseOrdinalAsc(result.getId());
 
         return toDetailResponse(submission, result, testResults);
+    }
+
+    private OutboxEvent buildOutbox(Submission submission) {
+        OutboxEvent event = new OutboxEvent();
+        event.setAggregateType("SUBMISSION");
+        event.setAggregateId(submission.getId());
+        event.setEventType("SUBMISSION_QUEUED");
+        event.setStatus(OutboxStatus.NEW);
+        event.setPayload(serialize(new SubmissionQueuePayload(submission.getId())));
+        return event;
     }
 
     private SubmissionResponse toCreatedResponse(Submission submission) {
@@ -179,5 +196,12 @@ public class SubmissionService {
         );
     }
 
-
+    private String serialize(SubmissionQueuePayload payload) {
+        try {
+            return objectMapper.writeValueAsString(payload);
+        }
+        catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to serialize submission event: ", exception);
+        }
+    }
 }
