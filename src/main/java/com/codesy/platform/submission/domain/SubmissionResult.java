@@ -51,7 +51,4 @@ public class SubmissionResult extends AuditableEntity {
     @Column(name = "compiler_output", columnDefinition = "TEXT")
     private String compilerOutput;
 
-    @OneToMany(mappedBy = "submissionResult", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("testCaseOrdinal ASC")
-    private List<SubmissionTestResult> testResults = new ArrayList<>();
 }

@@ -6,7 +6,7 @@ import com.codesy.platform.submission.domain.SubmissionStatus;
 import java.time.Instant;
 import java.util.UUID;
 
-public record SubmissionDetailResponse(
+public record SubmissionResponse(
         UUID id,
         String problemSlug,
         Integer problemVersion,
@@ -16,4 +16,5 @@ public record SubmissionDetailResponse(
         Instant createdAt,
         Instant completedAt,
         SubmissionResultResponse result
-) {}
+) {
+}
