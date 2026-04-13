@@ -3,7 +3,7 @@ package com.codesy.platform.submission.application;
 import com.codesy.platform.auth.application.AuthenticatedUserProvider;
 import com.codesy.platform.execution.domain.OutboxEvent;
 import com.codesy.platform.execution.domain.OutboxStatus;
-import com.codesy.platform.execution.domain.SubmissionQueuePayload;
+import com.codesy.platform.execution.domain.SubmissionQueuedPayload;
 import com.codesy.platform.execution.infrastructure.OutboxEventRepository;
 import com.codesy.platform.problem.domain.Problem;
 import com.codesy.platform.problem.domain.ProblemVersion;
@@ -118,7 +118,7 @@ public class SubmissionService {
         event.setAggregateId(submission.getId());
         event.setEventType("SUBMISSION_QUEUED");
         event.setStatus(OutboxStatus.NEW);
-        event.setPayload(serialize(new SubmissionQueuePayload(submission.getId())));
+        event.setPayload(serialize(new SubmissionQueuedPayload(submission.getId())));
         return event;
     }
 
@@ -196,7 +196,7 @@ public class SubmissionService {
         );
     }
 
-    private String serialize(SubmissionQueuePayload payload) {
+    private String serialize(SubmissionQueuedPayload payload) {
         try {
             return objectMapper.writeValueAsString(payload);
         }
