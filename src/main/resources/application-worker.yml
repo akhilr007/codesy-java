@@ -7,3 +7,5 @@ app:
     dispatch: kafka
     producer-enabled: false
     worker-enabled: true
+    sandbox:
+      enabled: true

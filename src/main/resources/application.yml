@@ -63,6 +63,24 @@ app:
     producer-enabled: ${APP_EXECUTION_PRODUCER_ENABLED:true}
     worker-enabled: ${APP_EXECUTION_WORKER_ENABLED:true}
     poll-delay: ${APP_EXECUTION_POLL_DELAY:3000}
+    sandbox:
+      enabled: ${APP_EXECUTION_SANDBOX_ENABLED:false}
+      provider: ${APP_EXECUTION_SANDBOX_PROVIDER:docker}
+      working-root: ${APP_EXECUTION_SANDBOX_WORKING_ROOT:${java.io.tmpdir}/codesy-sandbox}
+      disable-network: ${APP_EXECUTION_SANDBOX_DISABLE_NETWORK:true}
+      workspace-prefix: ${APP_EXECUTION_SANDBOX_WORKSPACE_PREFIX:submission}
+      container-user: ${APP_EXECUTION_SANDBOX_CONTAINER_USER:sandbox}
+      limits:
+        compile-timeout: ${APP_EXECUTION_SANDBOX_COMPILE_TIMEOUT:PT10S}
+        run-timeout: ${APP_EXECUTION_SANDBOX_RUN_TIMEOUT:PT2S}
+        memory-limit-mb: ${APP_EXECUTION_SANDBOX_MEMORY_LIMIT_MB:256}
+        max-processes: ${APP_EXECUTION_SANDBOX_MAX_PROCESSES:64}
+        max-output-kb: ${APP_EXECUTION_SANDBOX_MAX_OUTPUT_KB:512}
+        max-source-kb: ${APP_EXECUTION_SANDBOX_MAX_SOURCE_KB:128}
+      images:
+        java-21: ${APP_EXECUTION_SANDBOX_JAVA_21_IMAGE:codesy/sandbox-java:latest}
+        python-3: ${APP_EXECUTION_SANDBOX_PYTHON_3_IMAGE:codesy/sandbox-python:latest}
+        cpp-17: ${APP_EXECUTION_SANDBOX_CPP_17_IMAGE:codesy/sandbox-cpp:latest}
 
 logging:
   pattern:
