@@ -3,6 +3,7 @@ package com.codesy.platform.execution.application;
 import com.codesy.platform.execution.api.dto.JudgeResult;
 import com.codesy.platform.execution.api.dto.JudgeTestCaseResult;
 import com.codesy.platform.execution.factory.CodeRunnerFactory;
+import com.codesy.platform.leaderboard.application.LeaderboardService;
 import com.codesy.platform.problem.domain.TestCase;
 import com.codesy.platform.problem.infrastructure.TestCaseRepository;
 import com.codesy.platform.shared.exception.ResourceNotFoundException;
@@ -30,6 +31,7 @@ public class SubmissionExecutionService {
     private final SubmissionTestResultRepository submissionTestResultRepository;
     private final TestCaseRepository testCaseRepository;
     private final CodeRunnerFactory codeRunnerFactory;
+    private final LeaderboardService leaderboardService;
 
     @Transactional
     public void execute(UUID submissionId) {
@@ -75,6 +77,7 @@ public class SubmissionExecutionService {
 
         if (judgeResult.verdict() == SubmissionVerdict.ACCEPTED) {
             // todo update leaderboard service
+            leaderboardService.recordAcceptedSubmission(submission);
         }
         log.info("Submission {} completed with verdict: {}", submissionId, judgeResult.verdict());
     }
