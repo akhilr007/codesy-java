@@ -1,6 +1,5 @@
 package com.codesy.platform.execution.api.dto;
 
-import com.codesy.platform.execution.infrastructure.SandboxFileLayout;
 import com.codesy.platform.problem.domain.TestCaseVisibility;
 import com.codesy.platform.submission.domain.ProgrammingLanguage;
 

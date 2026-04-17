@@ -1,5 +1,6 @@
-package com.codesy.platform.execution.infrastructure;
+package com.codesy.platform.execution.api.dto;
 
+import com.codesy.platform.execution.infrastructure.ExecutionSandboxProperties;
 import com.codesy.platform.submission.domain.ProgrammingLanguage;
 
 import java.nio.file.Path;
@@ -9,6 +10,7 @@ import java.util.UUID;
 public record SandboxFileLayout(
         Path workspaceRoot,
         Path sourceFile,
+        Path requestFile,
         Path compileOutputFile,
         Path stdoutFile,
         Path stderrFile,
@@ -17,6 +19,7 @@ public record SandboxFileLayout(
     public SandboxFileLayout {
         Objects.requireNonNull(workspaceRoot, "workspaceRoot must not be null");
         Objects.requireNonNull(sourceFile, "sourceFile must not be null");
+        Objects.requireNonNull(requestFile, "requestFile must not be null");
         Objects.requireNonNull(compileOutputFile, "compileOutputFile must not be null");
         Objects.requireNonNull(stdoutFile, "stdoutFile must not be null");
         Objects.requireNonNull(stderrFile, "stderrFile must not be null");
@@ -37,6 +40,7 @@ public record SandboxFileLayout(
         return new SandboxFileLayout(
                 workspaceRoot,
                 workspaceRoot.resolve(sourceFileName(language)),
+                workspaceRoot.resolve("request.json"),
                 workspaceRoot.resolve("compile-output.txt"),
                 workspaceRoot.resolve("stdout.txt"),
                 workspaceRoot.resolve("stderr.txt"),
