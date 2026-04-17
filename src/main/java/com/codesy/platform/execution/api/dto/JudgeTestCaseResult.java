@@ -14,7 +14,7 @@ public record JudgeTestCaseResult(
         Long memoryKb,
         String message,
         String inputSnapshot,
-        String executedOutputSnapshot,
+        String expectedOutputSnapshot,
         String actualOutput
 ) {
 }

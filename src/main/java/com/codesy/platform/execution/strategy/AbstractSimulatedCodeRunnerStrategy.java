@@ -3,6 +3,7 @@ package com.codesy.platform.execution.strategy;
 import com.codesy.platform.execution.api.dto.JudgeResult;
 import com.codesy.platform.execution.api.dto.JudgeTestCaseResult;
 import com.codesy.platform.problem.domain.TestCase;
+import com.codesy.platform.submission.domain.Submission;
 import com.codesy.platform.submission.domain.SubmissionVerdict;
 import com.codesy.platform.submission.domain.TestCaseResultVerdict;
 
@@ -13,17 +14,18 @@ import java.util.Locale;
 public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerStrategy {
 
     @Override
-    public JudgeResult judge(String sourceCode, List<TestCase> testCases) {
+    public JudgeResult judge(Submission submission, List<TestCase> testCases) {
+        return judge(submission.getSourceCode(), testCases);
+    }
 
+    protected JudgeResult judge(String sourceCode, List<TestCase> testCases) {
         String normalized = sourceCode == null ? "" : sourceCode.trim();
         String lower = normalized.toLowerCase(Locale.ROOT);
-
         int totalTests = testCases.size();
 
         if (normalized.isBlank() || lower.contains("compileerror") || lower.contains("syntaxerror")) {
             return buildCompilationError(testCases, totalTests);
         }
-
         if (lower.contains("timeout") || lower.contains("tle")) {
             return buildSingleFailure(
                     testCases,
@@ -33,13 +35,11 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
                     0,
                     1_500L,
                     2_560L,
-                    supports().name() + "runner exceeded the time limit",
+                    supports().name() + " runner exceeded the time limit",
                     null,
-                    "Execution exceeded the allowed time limit"
-            );
+                    "Execution exceeded the allowed time limit");
         }
-
-        if (lower.contains("memoryLimit") || lower.contains("mle")) {
+        if (lower.contains("memorylimit") || lower.contains("mle")) {
             return buildSingleFailure(
                     testCases,
                     totalTests,
@@ -48,12 +48,10 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
                     0,
                     220L,
                     131_072L,
-                    supports().name() + "runner exceeded the memory limit",
+                    supports().name() + " runner exceeded the memory limit",
                     null,
-                    "Execution exceeded the allowed memory limit"
-            );
+                    "Execution exceeded the allowed memory limit");
         }
-
         if (lower.contains("panic") || lower.contains("throw") || lower.contains("runtimeerror")) {
             return buildSingleFailure(
                     testCases,
@@ -63,16 +61,12 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
                     0,
                     95L,
                     3_072L,
-                    supports().name() + "runner aborted with a runtime error",
+                    supports().name() + " runner aborted with a runtime error",
                     null,
-                    "Unhandled runtime exception during execution"
-            );
+                    "Unhandled runtime exception during execution");
         }
-
-        if (lower.contains("wronganswer") || lower.contains("todo") || lower.contains("fixme")
-        || normalized.length() < 40) {
+        if (lower.contains("wronganswer") || lower.contains("todo") || lower.contains("fixme") || normalized.length() < 40) {
             int passedBeforeFailure = totalTests > 1 ? 1 : 0;
-
             return buildSingleFailure(
                     testCases,
                     totalTests,
@@ -97,8 +91,7 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
                         null,
                         null,
                         "Compilation failed before this test could run",
-                        null
-                ))
+                        null))
                 .toList();
 
         return new JudgeResult(
@@ -107,10 +100,9 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
                 totalTests,
                 null,
                 null,
-                supports().name() + "runner rejected the submission during compilation",
-                "Compilation failed. empty or invalid source code",
-                caseResults
-        );
+                supports().name() + " runner rejected the submission during compilation",
+                "Compilation failed: empty or invalid source code",
+                caseResults);
     }
 
     private JudgeResult buildAccepted(List<TestCase> testCases, int totalTests, String normalized) {
@@ -138,7 +130,6 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
                 null,
                 caseResults);
     }
-
 
     private JudgeResult buildSingleFailure(List<TestCase> testCases,
                                            int totalTests,
@@ -237,5 +228,4 @@ public abstract class AbstractSimulatedCodeRunnerStrategy implements CodeRunnerS
         }
         return hasMemory ? peakMemory : null;
     }
-
 }
