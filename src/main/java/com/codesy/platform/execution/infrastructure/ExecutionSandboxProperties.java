@@ -2,6 +2,7 @@ package com.codesy.platform.execution.infrastructure;
 
 import com.codesy.platform.submission.domain.ProgrammingLanguage;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +11,7 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.Duration;
 
@@ -60,6 +62,10 @@ public class ExecutionSandboxProperties {
 
         @NotNull
         private Duration runTimeout = Duration.ofSeconds(2);
+
+        @NotNull
+        @DecimalMin("0.1")
+        private BigDecimal cpuLimit = BigDecimal.ONE;
 
         @Min(16)
         private int memoryLimitKb = 256;

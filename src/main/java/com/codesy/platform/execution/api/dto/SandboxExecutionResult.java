@@ -20,4 +20,5 @@ public record SandboxExecutionResult(
         Objects.requireNonNull(verdict, "verdict must not be null");
         testCaseResults = testCaseResults == null ? List.of() : List.copyOf(testCaseResults);
     }
+
 }
