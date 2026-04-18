@@ -46,12 +46,18 @@ public class SubmissionService {
     private final ProblemRepository problemRepository;
     private final ProblemVersionRepository problemVersionRepository;
     private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final SubmissionRateLimitService submissionRateLimitService;
+    private final SubmissionConcurrencyGuard submissionConcurrencyGuard;
+    private final QueuePressureGuard queuePressureGuard;
     private final ObjectMapper objectMapper;
     private final OutboxEventRepository outboxEventRepository;
 
     @Transactional
-    public SubmissionResponse createSubmission(CreateSubmissionRequest request) {
+    public SubmissionResponse createSubmission(CreateSubmissionRequest request, String clientIp) {
         AppUser user = authenticatedUserProvider.getCurrentUser();
+        submissionRateLimitService.assertAllowed(user.getId(), clientIp);
+        submissionConcurrencyGuard.assertCanAccept(user.getId());
+        queuePressureGuard.assertAcceptingNewWork();
         Problem problem =  problemRepository.findBySlug(request.problemSlug().trim().toLowerCase())
                 .orElseThrow(() -> new ResourceNotFoundException("Problem not found"));
 

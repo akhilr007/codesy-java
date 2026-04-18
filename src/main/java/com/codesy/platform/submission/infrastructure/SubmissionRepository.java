@@ -3,6 +3,7 @@ package com.codesy.platform.submission.infrastructure;
 import com.codesy.platform.submission.api.dto.SubmissionDetailRow;
 import com.codesy.platform.submission.api.dto.SubmissionSummaryRow;
 import com.codesy.platform.submission.domain.Submission;
+import com.codesy.platform.submission.domain.SubmissionStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +19,10 @@ import java.util.UUID;
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
     long countByUserIdAndProblemId(UUID userId, UUID problemId);
+
+    long countByUserIdAndStatusIn(UUID userId, List<SubmissionStatus> statuses);
+
+    long countByStatus(SubmissionStatus status);
 
     @Query(
             value = """
