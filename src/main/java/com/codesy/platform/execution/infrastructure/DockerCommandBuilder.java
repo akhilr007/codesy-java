@@ -2,6 +2,7 @@ package com.codesy.platform.execution.infrastructure;
 
 import com.codesy.platform.execution.api.dto.SandboxExecutionRequest;
 import com.codesy.platform.execution.api.dto.SandboxFileLayout;
+import com.codesy.platform.execution.exception.SandboxExecutionException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +79,9 @@ public class DockerCommandBuilder {
     private String containerPath(Path workspaceRoot, Path hostPath) {
         Path relative = workspaceRoot.toAbsolutePath().normalize()
                 .relativize(hostPath.toAbsolutePath().normalize());
+        if (relative.startsWith("..")) {
+            throw new SandboxExecutionException("Path traversal detected in sandbox file layout");
+        }
         return CONTAINER_WORKSPACE + "/" + relative.toString().replace(File.separatorChar, '/');
     }
 }

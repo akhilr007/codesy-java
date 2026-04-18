@@ -18,14 +18,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 public class DockerSandboxExecutor {
+
+    /**
+     * Dedicated thread pool for reading process stdout/stderr streams.
+     * Avoids stealing threads from the common ForkJoinPool, which would
+     * cause starvation under concurrent sandbox executions.
+     */
+    private static final ExecutorService STREAM_READER_POOL =
+            Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "sandbox-stream-reader");
+                t.setDaemon(true);
+                return t;
+            });
 
     private final ExecutionSandboxProperties properties;
     private final DockerCommandBuilder commandBuilder;
@@ -61,26 +76,30 @@ public class DockerSandboxExecutor {
         }
 
         prepareWorkspace(request);
-        List<String> command = commandBuilder.build(request);
-        log.info("Executing submission {} in docker sandbox using image {}",
-                request.submissionId(), properties.imageFor(request.language()));
+        try {
+            List<String> command = commandBuilder.build(request);
+            log.info("Executing submission {} in docker sandbox using image {}",
+                    request.submissionId(), properties.imageFor(request.language()));
 
-        SandboxProcessResult processResult = commandRunner.run(
-                command,
-                request.fileLayout().workspaceRoot(),
-                timeoutFor(request)
-        );
+            SandboxProcessResult processResult = commandRunner.run(
+                    command,
+                    request.fileLayout().workspaceRoot(),
+                    timeoutFor(request)
+            );
 
-        if (processResult.timedOut()) {
-            throw new SandboxExecutionException("Sandbox process timed out for submission " + request.submissionId());
+            if (processResult.timedOut()) {
+                throw new SandboxExecutionException("Sandbox process timed out for submission " + request.submissionId());
+            }
+
+            if (!Files.exists(request.fileLayout().resultFile()) && processResult.exitCode() != 0) {
+                throw new SandboxExecutionException("Sandbox process failed before producing a result for submission " +
+                        request.submissionId() + ". stderr= " + processResult.stderr());
+            }
+
+            return resultMapper.map(request.fileLayout().resultFile(), processResult);
+        } finally {
+            cleanupWorkspace(request.fileLayout().workspaceRoot());
         }
-
-        if (!Files.exists(request.fileLayout().resultFile()) && processResult.exitCode() != 0) {
-            throw new SandboxExecutionException("Sandbox process failed before producing a result for submission " +
-                    request.submissionId() + ". stderr= " + processResult.stderr());
-        }
-
-        return resultMapper.map(request.fileLayout().resultFile(), processResult);
     }
 
     private void prepareWorkspace(SandboxExecutionRequest request) {
@@ -96,6 +115,29 @@ public class DockerSandboxExecutor {
         } catch (IOException ex) {
             throw new SandboxExecutionException("Failed to prepare sandbox workspace for submission" +
                     request.submissionId());
+        }
+    }
+
+    /**
+     * Recursively deletes the sandbox workspace directory after execution
+     * to prevent disk space exhaustion under load.
+     */
+    private void cleanupWorkspace(Path workspace) {
+        try {
+            if (Files.exists(workspace)) {
+                Files.walk(workspace)
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException ignored) {
+                                // Best-effort cleanup
+                            }
+                        });
+                log.debug("Cleaned up sandbox workspace: {}", workspace);
+            }
+        } catch (IOException e) {
+            log.warn("Failed to clean sandbox workspace {}: {}", workspace, e.getMessage());
         }
     }
 
@@ -147,7 +189,7 @@ public class DockerSandboxExecutor {
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to read sandbox process output", e);
             }
-        });
+        }, STREAM_READER_POOL);
     }
 
     private record RunnerRequestDocument(
@@ -159,6 +201,4 @@ public class DockerSandboxExecutor {
     interface SandboxCommandRunner {
         SandboxProcessResult run(List<String> command, Path workingDirectory, Duration timeout);
     }
-
-
 }

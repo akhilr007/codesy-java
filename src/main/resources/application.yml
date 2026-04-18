@@ -32,6 +32,10 @@ spring:
       port: ${SPRING_DATA_REDIS_PORT:6379}
       repositories:
         enabled: false
+  web:
+    pageable:
+      max-page-size: 100
+      default-page-size: 20
 
 management:
   endpoints:

@@ -26,6 +26,8 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
         String correlationId = Optional.ofNullable(request.getHeader(HEADER_NAME))
                 .filter(value -> !value.isBlank())
+                .filter(value -> value.length() <= 64)
+                .filter(value -> value.matches("^[a-zA-Z0-9\\-]+$"))
                 .orElseGet(() -> UUID.randomUUID().toString().substring(0, 8));
 
         MDC.put(MDC_KEY, correlationId);

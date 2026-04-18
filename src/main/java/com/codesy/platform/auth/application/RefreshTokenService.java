@@ -133,9 +133,11 @@ public class RefreshTokenService {
         token.setReplacedByTokenHash(replacementHash);
     }
 
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
     private String generateOpaqueToken() {
-        byte[] randomBytes = UUID.randomUUID().toString().concat(UUID.randomUUID().toString())
-                .getBytes(StandardCharsets.UTF_8);
+        byte[] randomBytes = new byte[32]; // 256 bits of entropy
+        SECURE_RANDOM.nextBytes(randomBytes);
         return TOKEN_ENCODER.encodeToString(randomBytes);
     }
 
