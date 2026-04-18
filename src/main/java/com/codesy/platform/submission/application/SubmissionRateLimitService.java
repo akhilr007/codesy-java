@@ -3,7 +3,9 @@ package com.codesy.platform.submission.application;
 import com.codesy.platform.execution.infrastructure.ExecutionBackpressureProperties;
 import com.codesy.platform.shared.exception.RateLimitExceededException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionRateLimitService {
@@ -53,10 +56,15 @@ public class SubmissionRateLimitService {
     private long increment(String key, Duration window) {
         StringRedisTemplate redisTemplate = redisTemplateProvider.getIfAvailable();
         if (redisTemplate != null) {
-            Long count = redisTemplate.opsForValue().increment(key);
-            redisTemplate.expire(key, window);
-            if (count != null) {
-                return count;
+            try {
+                Long count = redisTemplate.opsForValue().increment(key);
+                redisTemplate.expire(key, window);
+                if (count != null) {
+                    return count;
+                }
+            } catch (DataAccessException e) {
+                log.warn("Redis-backed submission rate limiting unavailable, " +
+                        "falling back to local counters {}", e.getMessage());
             }
         }
         return incrementLocally(key, window);
