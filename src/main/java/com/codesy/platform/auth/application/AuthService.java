@@ -42,6 +42,7 @@ public class AuthService {
         user.setEmail(request.email().trim().toLowerCase());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.USER);
+        user.setEnabled(true);
         userRepository.save(user);
 
         return createSession(user, requestDetails);

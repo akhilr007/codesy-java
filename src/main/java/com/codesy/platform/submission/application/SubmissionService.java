@@ -52,13 +52,26 @@ public class SubmissionService {
     private final ObjectMapper objectMapper;
     private final OutboxEventRepository outboxEventRepository;
 
-    @Transactional
+    /**
+     * Creates a new submission. Guardrail checks (rate limit, concurrency, queue pressure)
+     * run BEFORE the transaction to avoid holding a DB connection during Redis calls.
+     * Only the actual DB write is transactional.
+     */
     public SubmissionResponse createSubmission(CreateSubmissionRequest request, String clientIp) {
         AppUser user = authenticatedUserProvider.getCurrentUser();
+
+        // Guardrails run outside the transaction to avoid holding a DB connection
+        // during Redis round-trips (rate limiting) and count queries (queue pressure).
         submissionRateLimitService.assertAllowed(user.getId(), clientIp);
         submissionConcurrencyGuard.assertCanAccept(user.getId());
         queuePressureGuard.assertAcceptingNewWork();
-        Problem problem =  problemRepository.findBySlug(request.problemSlug().trim().toLowerCase())
+
+        return persistSubmission(request, user);
+    }
+
+    @Transactional
+    protected SubmissionResponse persistSubmission(CreateSubmissionRequest request, AppUser user) {
+        Problem problem = problemRepository.findBySlug(request.problemSlug().trim().toLowerCase())
                 .orElseThrow(() -> new ResourceNotFoundException("Problem not found"));
 
         ProblemVersion activeVersion = problemVersionRepository.findByProblemIdAndActiveTrue(problem.getId())
@@ -77,7 +90,6 @@ public class SubmissionService {
         submission.setQueuedAt(Instant.now());
         Submission saved = submissionRepository.save(submission);
 
-        // todo : add to outbox event
         outboxEventRepository.save(buildOutbox(saved));
         return toCreatedResponse(saved);
     }

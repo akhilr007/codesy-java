@@ -7,6 +7,7 @@ import com.codesy.platform.leaderboard.application.LeaderboardService;
 import com.codesy.platform.problem.domain.TestCase;
 import com.codesy.platform.problem.infrastructure.TestCaseRepository;
 import com.codesy.platform.shared.exception.ResourceNotFoundException;
+import com.codesy.platform.submission.application.SubmissionConcurrencyGuard;
 import com.codesy.platform.submission.domain.*;
 import com.codesy.platform.submission.infrastructure.SubmissionRepository;
 import com.codesy.platform.submission.infrastructure.SubmissionResultRepository;
@@ -32,6 +33,7 @@ public class SubmissionExecutionService {
     private final TestCaseRepository testCaseRepository;
     private final CodeRunnerFactory codeRunnerFactory;
     private final LeaderboardService leaderboardService;
+    private final SubmissionConcurrencyGuard submissionConcurrencyGuard;
 
     @Transactional
     public void execute(UUID submissionId) {
@@ -75,8 +77,14 @@ public class SubmissionExecutionService {
         submissionTestResultRepository.saveAll(toSubmissionTestResults(savedResult, judgeResult.testCaseResults()));
         submissionRepository.save(submission);
 
+        // Release the concurrency guard slot now that this submission is terminal
+        try {
+            submissionConcurrencyGuard.releaseSlot(submission.getUser().getId());
+        } catch (Exception e) {
+            log.warn("Failed to release concurrency slot for submission {}: {}", submissionId, e.getMessage());
+        }
+
         if (judgeResult.verdict() == SubmissionVerdict.ACCEPTED) {
-            // todo update leaderboard service
             leaderboardService.recordAcceptedSubmission(submission);
         }
         log.info("Submission {} completed with verdict: {}", submissionId, judgeResult.verdict());

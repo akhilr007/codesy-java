@@ -22,7 +22,7 @@ public class JwtService {
     private final Duration accessExpiration;
 
     public JwtService(@Value("${app.jwt.secret}") String secret,
-                      @Value("${app.jwt.expiration}") Duration accessExpiration) {
+                      @Value("${app.jwt.access-expiration}") Duration accessExpiration) {
         this.signingKey = resolveKey(secret);
         this.accessExpiration = accessExpiration;
     }

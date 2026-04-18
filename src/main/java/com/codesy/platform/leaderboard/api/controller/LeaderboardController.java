@@ -1,6 +1,7 @@
 package com.codesy.platform.leaderboard.api.controller;
 
 import com.codesy.platform.leaderboard.api.dto.LeaderboardEntryResponse;
+import com.codesy.platform.leaderboard.application.LeaderboardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;

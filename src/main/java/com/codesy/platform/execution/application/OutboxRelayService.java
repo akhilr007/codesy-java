@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -33,7 +34,7 @@ public class OutboxRelayService {
     @Scheduled(fixedDelayString = "${app.execution.poll-delay:3000}")
     @Transactional
     public void relay() {
-        List<OutboxEvent> events = outboxEventRepository.findByStatusOrderByCreatedAtAsc(
+        List<OutboxEvent> events = outboxEventRepository.findAndLockByStatus(
                 OutboxStatus.NEW,
                 PageRequest.of(0, batchSize));
         for (OutboxEvent event : events) {
@@ -51,6 +52,21 @@ public class OutboxRelayService {
                 }
                 log.warn("Failed to relay outbox event {}: {}", event.getId(), exception.getMessage());
             }
+        }
+    }
+
+    /**
+     * Archives old dispatched outbox events to prevent unbounded table growth.
+     * Runs daily at 3 AM.
+     */
+    @Scheduled(cron = "0 0 3 * * *")
+    @Transactional
+    public void archiveOldEvents() {
+        Instant cutoff = Instant.now().minus(Duration.ofDays(7));
+        int deleted = outboxEventRepository.deleteByStatusInAndProcessedAtBefore(
+                List.of(OutboxStatus.DISPATCHED), cutoff);
+        if (deleted > 0) {
+            log.info("Archived {} old dispatched outbox events", deleted);
         }
     }
 }

@@ -15,6 +15,6 @@ public record CreateSubmissionRequest(
         ProgrammingLanguage language,
 
         @NotBlank
-        @Size(max = 50000, message = "Source code too large")
+        @Size(max = 20000, message = "Source code too large (max 20KB)")
         String sourceCode
 ) {}

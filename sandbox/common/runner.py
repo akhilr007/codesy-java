@@ -14,6 +14,7 @@ COMPILE_OUTPUT_FILE = Path(os.environ.get("CODESY_COMPILE_OUTPUT_FILE", "/worksp
 STDOUT_FILE = Path(os.environ.get("CODESY_STDOUT_FILE", "/workspace/stdout.txt"))
 STDERR_FILE = Path(os.environ.get("CODESY_STDERR_FILE", "/workspace/stderr.txt"))
 RESULT_FILE = Path(os.environ.get("CODESY_RESULT_FILE", "/workspace/result.json"))
+MAX_OUTPUT_KB = int(os.environ.get("CODESY_MAX_OUTPUT_KB", "1024"))
 COMPILE_TIMEOUT_MS = int(os.environ.get("CODESY_COMPILE_TIMEOUT_MS", "10000"))
 RUN_TIMEOUT_MS = int(os.environ.get("CODESY_RUN_TIMEOUT_MS", "2000"))
 
@@ -42,19 +43,52 @@ def command_for_language(language: str, workspace: Path) -> tuple[list[str] | No
     raise ValueError(f"Unsupported language {language}")
 
 
-def run_process(command: list[str], workspace: Path, timeout_ms: int, input_data: str | None = None) -> tuple[subprocess.CompletedProcess[str], int]:
+def read_truncated(path: Path, max_bytes: int) -> str:
+    if not path.exists():
+        return ""
+    # Truncate at max_bytes. If output is huge, we don't load gigabytes into RAM.
+    with open(path, "rb") as f:
+        content = f.read(max_bytes)
+        suffix = "\n...[Output Truncated]" if f.read(1) else ""
+        return content.decode("utf-8", errors="replace") + suffix
+
+
+def run_process(command: list[str], workspace: Path, timeout_ms: int, input_data: str | None = None) -> tuple[subprocess.CompletedProcess[str], int, str, str]:
     started_at = time.monotonic()
-    completed = subprocess.run(
-        command,
-        cwd=workspace,
-        input=input_data,
-        text=True,
-        capture_output=True,
-        timeout=timeout_ms / 1000.0,
-        check=False,
-    )
+    
+    stdout_file = Path("/tmp/process_stdout.log")
+    stderr_file = Path("/tmp/process_stderr.log")
+    
+    with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=workspace,
+                input=input_data,
+                text=True,
+                stdout=out,
+                stderr=err,
+                timeout=timeout_ms / 1000.0,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as exc:
+            duration_ms = int((time.monotonic() - started_at) * 1000)
+            stdout = read_truncated(stdout_file, MAX_OUTPUT_KB * 1024)
+            stderr = read_truncated(stderr_file, MAX_OUTPUT_KB * 1024)
+            # Reattach our read outputs and raise
+            exc.stdout = stdout
+            exc.stderr = stderr
+            raise exc
+
     duration_ms = int((time.monotonic() - started_at) * 1000)
-    return completed, duration_ms
+    stdout = read_truncated(stdout_file, MAX_OUTPUT_KB * 1024)
+    stderr = read_truncated(stderr_file, MAX_OUTPUT_KB * 1024)
+    
+    # Clean up
+    if stdout_file.exists(): stdout_file.unlink()
+    if stderr_file.exists(): stderr_file.unlink()
+    
+    return completed, duration_ms, stdout, stderr
 
 
 def build_not_run_cases(test_cases: list[dict], start_index: int) -> list[dict]:
@@ -87,9 +121,7 @@ def main() -> int:
     compile_stderr = ""
     if compile_command is not None:
         try:
-            compile_process, _ = run_process(compile_command, workspace, COMPILE_TIMEOUT_MS)
-            compile_stdout = compile_process.stdout or ""
-            compile_stderr = compile_process.stderr or ""
+            compile_process, _, compile_stdout, compile_stderr = run_process(compile_command, workspace, COMPILE_TIMEOUT_MS)
             write_text(COMPILE_OUTPUT_FILE, (compile_stdout + "\n" + compile_stderr).strip())
             if compile_process.returncode != 0:
                 write_result(
@@ -153,8 +185,10 @@ def main() -> int:
 
     for index, test_case in enumerate(test_cases):
         try:
-            execution, runtime_ms = run_process(run_command, workspace, RUN_TIMEOUT_MS, test_case.get("inputData", ""))
-        except subprocess.TimeoutExpired:
+            execution, runtime_ms, stdout, stderr = run_process(run_command, workspace, RUN_TIMEOUT_MS, test_case.get("inputData", ""))
+        except subprocess.TimeoutExpired as exc:
+            stdout = exc.stdout or ""
+            stderr = exc.stderr or ""
             case_results.append(
                 {
                     "testCaseId": test_case["testCaseId"],
@@ -172,8 +206,6 @@ def main() -> int:
             total_runtime_ms += RUN_TIMEOUT_MS
             break
 
-        stdout = execution.stdout or ""
-        stderr = execution.stderr or ""
         combined_stdout.append(stdout)
         combined_stderr.append(stderr)
         total_runtime_ms += runtime_ms

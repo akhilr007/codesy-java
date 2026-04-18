@@ -12,6 +12,7 @@ import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,12 @@ public class LeaderboardService {
                 .toList();
     }
 
+    /**
+     * Records an accepted submission on the leaderboard.
+     * Uses pessimistic locking via findByUserAndScopeForUpdate to prevent
+     * the TOCTOU race where two concurrent accepted submissions for the
+     * same problem could double-count the score.
+     */
     @Transactional
     public void recordAcceptedSubmission(Submission submission) {
         boolean alreadySolved = submissionResultRepository.existsBySubmissionUserIdAndSubmissionProblemIdAndVerdictAndSubmissionIdNot(
@@ -59,22 +66,36 @@ public class LeaderboardService {
             return;
         }
 
-        LeaderboardEntry entry = leaderboardEntryRepository.findByUserAndScope(submission.getUser(), GLOBAL_SCOPE)
+        LeaderboardEntry entry = leaderboardEntryRepository.findByUserAndScopeForUpdate(
+                        submission.getUser(), GLOBAL_SCOPE)
                 .orElseGet(() -> {
-                    LeaderboardEntry leaderboardEntry = new LeaderboardEntry();
-                    leaderboardEntry.setUser(submission.getUser());
-                    leaderboardEntry.setUsername(submission.getUser().getUsername());
-                    leaderboardEntry.setScope(GLOBAL_SCOPE);
-                    leaderboardEntry.setScore(0);
-                    leaderboardEntry.setAcceptedSubmissions(0);
-                    return leaderboardEntry;
+                    LeaderboardEntry newEntry = new LeaderboardEntry();
+                    newEntry.setUser(submission.getUser());
+                    newEntry.setUsername(submission.getUser().getUsername());
+                    newEntry.setScope(GLOBAL_SCOPE);
+                    newEntry.setScore(0);
+                    newEntry.setAcceptedSubmissions(0);
+                    return newEntry;
                 });
 
         entry.setUsername(submission.getUser().getUsername());
         entry.setScore(entry.getScore() + POINTS_PER_ACCEPTED_SUBMISSION);
         entry.setAcceptedSubmissions(entry.getAcceptedSubmissions() + 1);
         entry.setLastSubmissionAt(submission.getCompletedAt() != null ? submission.getCompletedAt() : Instant.now());
-        leaderboardEntryRepository.save(entry);
+
+        try {
+            leaderboardEntryRepository.save(entry);
+        } catch (DataIntegrityViolationException e) {
+            // Handle race on first insert — re-fetch and retry
+            log.warn("Leaderboard entry insert race detected for user {}, retrying", submission.getUser().getId());
+            entry = leaderboardEntryRepository.findByUserAndScopeForUpdate(submission.getUser(), GLOBAL_SCOPE)
+                    .orElseThrow(() -> new IllegalStateException("Leaderboard entry disappeared after insert race"));
+            entry.setScore(entry.getScore() + POINTS_PER_ACCEPTED_SUBMISSION);
+            entry.setAcceptedSubmissions(entry.getAcceptedSubmissions() + 1);
+            entry.setLastSubmissionAt(submission.getCompletedAt() != null ? submission.getCompletedAt() : Instant.now());
+            leaderboardEntryRepository.save(entry);
+        }
+
         updateRedisProjection(entry);
     }
 

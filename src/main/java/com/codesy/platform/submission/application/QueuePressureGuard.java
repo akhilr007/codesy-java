@@ -28,7 +28,7 @@ public class QueuePressureGuard {
         }
 
         long runningSubmissions = submissionRepository.countByStatus(SubmissionStatus.RUNNING);
-        if (queueSubmissions >= backpressureProperties.getMaxRunningSubmissions()) {
+        if (runningSubmissions >= backpressureProperties.getMaxRunningSubmissions()) {
             throw new ExecutionBackpressureException("Execution workers are saturated right now. " +
                     "Please try again shortly");
         }

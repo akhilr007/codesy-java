@@ -17,6 +17,12 @@ public class KafkaSubmissionExecutionListener {
     private final SubmissionExecutionService submissionExecutionService;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Processes submission execution messages from Kafka.
+     * Exceptions are handled by the configured DefaultErrorHandler
+     * (see KafkaErrorHandlerConfig) which provides bounded retries
+     * and dead-letter publishing instead of infinite retry loops.
+     */
     @KafkaListener(topics = "${app.execution.topic}", autoStartup = "${app.execution.worker-enabled:false}")
     public void onSubmissionQueued(String payload) throws Exception {
         SubmissionQueuedPayload message = objectMapper.readValue(payload, SubmissionQueuedPayload.class);
