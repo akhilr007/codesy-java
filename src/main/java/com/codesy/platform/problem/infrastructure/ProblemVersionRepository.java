@@ -18,7 +18,7 @@ public interface ProblemVersionRepository extends JpaRepository<ProblemVersion, 
     List<ProblemVersion> findAllByProblemId(UUID problemId);
 
     @Modifying
-    @Query("UPDATE ProblemVersion v SET v.active = false WHERE v.problem_id = :problemId")
+    @Query("UPDATE ProblemVersion v SET v.active = false WHERE v.problem.id = :problemId")
     void deactivateByProblemId(UUID problemId);
 
     Optional<ProblemVersion> findTopByProblemIdOrderByVersionNumberDesc(UUID problemId);
