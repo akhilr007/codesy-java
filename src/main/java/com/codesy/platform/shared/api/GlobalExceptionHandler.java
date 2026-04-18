@@ -1,9 +1,7 @@
 package com.codesy.platform.shared.api;
 
 import com.codesy.platform.shared.api.dto.ApiErrorResponse;
-import com.codesy.platform.shared.exception.ConflictException;
-import com.codesy.platform.shared.exception.ResourceNotFoundException;
-import com.codesy.platform.shared.exception.UnauthorizedException;
+import com.codesy.platform.shared.exception.*;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +27,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiErrorResponse> handleConflict(ConflictException exception) {
         return build(HttpStatus.CONFLICT, "CONFLICT", exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleRateLimitExceeded(RateLimitExceededException exception) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMIT_EXCEEDED", exception.getMessage(), Map.of());
+    }
+
+    @ExceptionHandler(ExecutionBackpressureException.class)
+    public ResponseEntity<ApiErrorResponse> handleExecutionBackpressure(ExecutionBackpressureException exception) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, "EXECUTION_BACKPRESSURE", exception.getMessage(), Map.of());
     }
 
     @ExceptionHandler({UnauthorizedException.class, AccessDeniedException.class})

@@ -81,6 +81,19 @@ app:
         java-21: ${APP_EXECUTION_SANDBOX_JAVA_21_IMAGE:codesy/sandbox-java:latest}
         python-3: ${APP_EXECUTION_SANDBOX_PYTHON_3_IMAGE:codesy/sandbox-python:latest}
         cpp-17: ${APP_EXECUTION_SANDBOX_CPP_17_IMAGE:codesy/sandbox-cpp:latest}
+    guardrails:
+      enabled: ${APP_EXECUTION_GUARDRAILS_ENABLED:true}
+      max-in-flight-per-user: ${APP_EXECUTION_MAX_IN_FLIGHT_PER_USER:3}
+      max-queued-submissions: ${APP_EXECUTION_MAX_QUEUED_SUBMISSIONS:200}
+      max-running-submissions: ${APP_EXECUTION_MAX_RUNNING_SUBMISSIONS:50}
+      max-pending-outbox-events: ${APP_EXECUTION_MAX_PENDING_OUTBOX_EVENTS:200}
+      rate-limit:
+        enabled: ${APP_EXECUTION_RATE_LIMIT_ENABLED:true}
+        trust-forwarded-headers: ${APP_EXECUTION_TRUST_FORWARDED_HEADERS:false}
+        user-window: ${APP_EXECUTION_USER_RATE_LIMIT_WINDOW:PT1M}
+        max-submissions-per-user: ${APP_EXECUTION_MAX_SUBMISSIONS_PER_USER:10}
+        ip-window: ${APP_EXECUTION_IP_RATE_LIMIT_WINDOW:PT1M}
+        max-submissions-per-ip: ${APP_EXECUTION_MAX_SUBMISSIONS_PER_IP:30}
 
 logging:
   pattern:

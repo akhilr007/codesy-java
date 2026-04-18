@@ -5,9 +5,11 @@ import com.codesy.platform.submission.api.dto.CreateSubmissionRequest;
 import com.codesy.platform.submission.api.dto.SubmissionDetailResponse;
 import com.codesy.platform.submission.api.dto.SubmissionResponse;
 import com.codesy.platform.submission.api.dto.SubmissionSummaryResponse;
+import com.codesy.platform.submission.application.ClientIpResolver;
 import com.codesy.platform.submission.application.SubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -24,12 +26,14 @@ import java.util.UUID;
 public class SubmissionController {
 
     private final SubmissionService submissionService;
+    private final ClientIpResolver clientIpResolver;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "create a new submission")
-    public SubmissionResponse create(@Valid @RequestBody CreateSubmissionRequest request) {
-        return submissionService.createSubmission(request);
+    public SubmissionResponse create(@Valid @RequestBody CreateSubmissionRequest request,
+                                     HttpServletRequest httpRequest) {
+        return submissionService.createSubmission(request, clientIpResolver.resolve(httpRequest));
     }
 
     @GetMapping
