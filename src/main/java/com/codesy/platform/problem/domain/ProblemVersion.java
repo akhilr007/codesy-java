@@ -38,6 +38,24 @@ public class ProblemVersion extends AuditableEntity {
     @Column(name = "memory_limit_mb", nullable = false)
     private Integer memoryLimitMb;
 
+    @Column(name = "java_starter_code", columnDefinition = "TEXT")
+    private String javaStarterCode;
+
+    @Column(name = "java_execution_template", columnDefinition = "TEXT")
+    private String javaExecutionTemplate;
+
+    @Column(name = "python_starter_code", columnDefinition = "TEXT")
+    private String pythonStarterCode;
+
+    @Column(name = "python_execution_template", columnDefinition = "TEXT")
+    private String pythonExecutionTemplate;
+
+    @Column(name = "cpp_starter_code", columnDefinition = "TEXT")
+    private String cppStarterCode;
+
+    @Column(name = "cpp_execution_template", columnDefinition = "TEXT")
+    private String cppExecutionTemplate;
+
     @Column(nullable = false)
     private boolean active;
 }

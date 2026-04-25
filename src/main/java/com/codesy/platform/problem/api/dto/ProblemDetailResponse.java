@@ -19,6 +19,7 @@ public record ProblemDetailResponse(
         Integer timeLimitMs,
         Integer memoryLimitMs,
         Integer versionNumber,
+        ProblemStarterCodesResponse starterCodes,
         List<VisibleTestCaseResponse> sampleTestCases
 ){
 }
