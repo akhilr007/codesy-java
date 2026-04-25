@@ -28,7 +28,7 @@ public class AppUser extends AuditableEntity implements UserDetails {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = UserRoleConverter.class)
     @Column(nullable = false, length = 32)
     private UserRole role;
 
