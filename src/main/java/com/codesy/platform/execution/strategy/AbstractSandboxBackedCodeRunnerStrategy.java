@@ -1,8 +1,10 @@
 package com.codesy.platform.execution.strategy;
 
+import com.codesy.platform.execution.application.SubmissionSourceComposer;
 import com.codesy.platform.execution.api.dto.*;
 import com.codesy.platform.execution.api.dto.SandboxExecutionRequest.ExecutionLimits;
 import com.codesy.platform.execution.api.dto.SandboxExecutionRequest.TestCasePayload;
+import com.codesy.platform.execution.exception.SandboxExecutionException;
 import com.codesy.platform.execution.infrastructure.DockerSandboxExecutor;
 import com.codesy.platform.execution.infrastructure.ExecutionSandboxProperties;
 import com.codesy.platform.problem.domain.ProblemVersion;
@@ -17,11 +19,14 @@ public abstract class AbstractSandboxBackedCodeRunnerStrategy implements CodeRun
 
     private final DockerSandboxExecutor sandboxExecutor;
     private final ExecutionSandboxProperties sandboxProperties;
+    private final SubmissionSourceComposer submissionSourceComposer;
 
     protected AbstractSandboxBackedCodeRunnerStrategy(DockerSandboxExecutor sandboxExecutor,
-                                                      ExecutionSandboxProperties sandboxProperties) {
+                                                      ExecutionSandboxProperties sandboxProperties,
+                                                      SubmissionSourceComposer submissionSourceComposer) {
         this.sandboxExecutor = sandboxExecutor;
         this.sandboxProperties = sandboxProperties;
+        this.submissionSourceComposer = submissionSourceComposer;
     }
 
 
@@ -30,7 +35,7 @@ public abstract class AbstractSandboxBackedCodeRunnerStrategy implements CodeRun
         SandboxExecutionRequest request = new SandboxExecutionRequest(
                 submission.getId(),
                 supports(),
-                submission.getSourceCode(),
+                submissionSourceComposer.compose(submission),
                 SandboxFileLayout.forSubmission(sandboxProperties, submission.getId(), supports()),
                 toExecutionLimits(submission.getProblemVersion()),
                 testCases.stream()
@@ -64,8 +69,15 @@ public abstract class AbstractSandboxBackedCodeRunnerStrategy implements CodeRun
 
     private JudgeResult toJudgeResult(List<TestCase> testCases, SandboxExecutionResult sandboxResult) {
         Map<UUID, SandboxExecutionTestCaseResult> sandboxResultsById = new HashMap<>();
-        for (SandboxExecutionTestCaseResult sandboxResultEntry : sandboxResult.testCaseResults()) {
-            sandboxResultsById.put(sandboxResultEntry.testCaseId(), sandboxResultEntry);
+
+        if (sandboxResult == null) {
+            throw new SandboxExecutionException("Sandbox returned null result");
+        }
+
+        if (sandboxResult.testCaseResults() != null) {
+            for (SandboxExecutionTestCaseResult sandboxResultEntry : sandboxResult.testCaseResults()) {
+                sandboxResultsById.put(sandboxResultEntry.testCaseId(), sandboxResultEntry);
+            }
         }
 
         List<JudgeTestCaseResult> judgeCaseResults = testCases.stream()

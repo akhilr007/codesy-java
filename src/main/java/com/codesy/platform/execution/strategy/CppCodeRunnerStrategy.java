@@ -1,5 +1,6 @@
 package com.codesy.platform.execution.strategy;
 
+import com.codesy.platform.execution.application.SubmissionSourceComposer;
 import com.codesy.platform.execution.infrastructure.DockerSandboxExecutor;
 import com.codesy.platform.execution.infrastructure.ExecutionSandboxProperties;
 import com.codesy.platform.submission.domain.ProgrammingLanguage;
@@ -10,8 +11,9 @@ public class CppCodeRunnerStrategy extends AbstractSandboxBackedCodeRunnerStrate
 
 
     public CppCodeRunnerStrategy(DockerSandboxExecutor sandboxExecutor,
-                                 ExecutionSandboxProperties sandboxProperties) {
-        super(sandboxExecutor, sandboxProperties);
+                                 ExecutionSandboxProperties sandboxProperties,
+                                 SubmissionSourceComposer submissionSourceComposer) {
+        super(sandboxExecutor, sandboxProperties, submissionSourceComposer);
     }
 
     @Override
