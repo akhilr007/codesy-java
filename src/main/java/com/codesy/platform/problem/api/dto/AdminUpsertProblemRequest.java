@@ -21,6 +21,7 @@ public record AdminUpsertProblemRequest(
         String constraintsText,
         @NotNull @Min(100) Integer timeLimitMs,
         @NotNull @Min(16) Integer memoryLimitMb,
+        @Valid ProblemLanguageTemplatesRequest languageTemplates,
         @Valid List<TestCaseRequest> sampleTestCases,
         @NotEmpty @Valid List<TestCaseRequest> hiddenTestCases
         ){

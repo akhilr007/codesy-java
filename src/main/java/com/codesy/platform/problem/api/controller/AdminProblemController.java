@@ -1,5 +1,6 @@
 package com.codesy.platform.problem.api.controller;
 
+import com.codesy.platform.problem.api.dto.AdminProblemEditorResponse;
 import com.codesy.platform.problem.api.dto.AdminUpsertProblemRequest;
 import com.codesy.platform.problem.api.dto.ProblemDetailResponse;
 import com.codesy.platform.problem.application.ProblemService;
@@ -20,6 +21,13 @@ import org.springframework.web.bind.annotation.*;
 public class AdminProblemController {
 
     private final ProblemService problemService;
+
+    @GetMapping("/{slug}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Get full editable problem data for admins")
+    public AdminProblemEditorResponse getProblem(@PathVariable @NotBlank String slug) {
+        return problemService.getAdminProblem(slug);
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
