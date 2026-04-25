@@ -56,6 +56,10 @@ services:
       dockerfile: sandbox/python/Dockerfile
     profiles:
       - sandboxes
+    volumes:
+      - ./workspace:/workspace
+    command: [ "tail", "-f", "/dev/null" ]
+    restart: unless-stopped
 
   sandbox-java:
     image: codesy/sandbox-java:latest
@@ -64,6 +68,10 @@ services:
       dockerfile: sandbox/java/Dockerfile
     profiles:
       - sandboxes
+    volumes:
+      - ./workspace:/workspace
+    command: ["tail", "-f", "/dev/null"]
+    restart: unless-stopped
 
   sandbox-cpp:
     image: codesy/sandbox-cpp:latest
@@ -72,6 +80,10 @@ services:
       dockerfile: sandbox/cpp/Dockerfile
     profiles:
       - sandboxes
+    volumes:
+      - ./workspace:/workspace
+    command: [ "tail", "-f", "/dev/null" ]
+    restart: unless-stopped
 
 volumes:
   postgres-data:

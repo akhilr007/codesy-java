@@ -55,10 +55,10 @@ def read_truncated(path: Path, max_bytes: int) -> str:
 
 def run_process(command: list[str], workspace: Path, timeout_ms: int, input_data: str | None = None) -> tuple[subprocess.CompletedProcess[str], int, str, str]:
     started_at = time.monotonic()
-    
+
     stdout_file = Path("/tmp/process_stdout.log")
     stderr_file = Path("/tmp/process_stderr.log")
-    
+
     with open(stdout_file, "w") as out, open(stderr_file, "w") as err:
         try:
             completed = subprocess.run(
@@ -83,11 +83,11 @@ def run_process(command: list[str], workspace: Path, timeout_ms: int, input_data
     duration_ms = int((time.monotonic() - started_at) * 1000)
     stdout = read_truncated(stdout_file, MAX_OUTPUT_KB * 1024)
     stderr = read_truncated(stderr_file, MAX_OUTPUT_KB * 1024)
-    
+
     # Clean up
     if stdout_file.exists(): stdout_file.unlink()
     if stderr_file.exists(): stderr_file.unlink()
-    
+
     return completed, duration_ms, stdout, stderr
 
 
@@ -236,7 +236,7 @@ def main() -> int:
                     "verdict": "RUNTIME_ERROR",
                     "runtimeMs": runtime_ms,
                     "memoryKb": None,
-                    "message": "Unhandled runtime exception during execution",
+                    "message": stderr or "Unhandled runtime exception during execution",
                     "actualOutput": None,
                 }
             )
