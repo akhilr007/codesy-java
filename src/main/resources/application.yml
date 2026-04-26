@@ -31,8 +31,9 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:codesy-redis-dev}
       repositories:
-        enabled: false
+        enabled: true
   web:
     pageable:
       max-page-size: 100
@@ -62,7 +63,7 @@ app:
     refresh-cookie-same-site: ${APP_JWT_REFRESH_COOKIE_SAME_SITE:Strict}
     refresh-cookie-path: ${APP_JWT_REFRESH_COOKIE_PATH:/api/v1/auth}
   execution:
-    dispatch: ${APP_EXECUTION_DISPATCH:local}
+    dispatch: ${APP_EXECUTION_DISPATCH:kafka}
     topic: ${APP_EXECUTION_TOPIC:submission-queued}
     outbox-batch-size: ${APP_EXECUTION_OUTBOX_BATCH_SIZE:25}
     producer-enabled: ${APP_EXECUTION_PRODUCER_ENABLED:true}
