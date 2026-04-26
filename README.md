@@ -34,12 +34,9 @@ To run the backend locally, you need the following installed:
 The project uses Docker Compose to manage local infrastructure (PostgreSQL, Redis, Kafka) and the execution sandbox containers.
 
 ```bash
-# Start infrastructure (Postgres, Redis, Kafka)
-docker-compose up -d
-
-# Build and start the execution sandboxes
-docker-compose --profile sandboxes build
-docker-compose --profile sandboxes up -d
+# Start the infrastructure and build the execution sandboxes
+docker compose --profile sandboxes build
+docker compose --profile sandboxes up -d
 ```
 
 ### 2. Configure the Application (Optional)
@@ -53,6 +50,11 @@ Flyway will automatically handle database migrations on application startup.
 You can run the application using Maven:
 
 ```bash
+# run the application
+cd codesy-java
+mvn spring-boot:run
+
+# OR
 ./mvnw spring-boot:run
 ```
 
